@@ -5,6 +5,7 @@ class Question < ApplicationRecord
 
   accepts_nested_attributes_for :options, allow_destroy: true, reject_if: :all_blank
 
+  # Удалили rating: 3
   enum :question_type, { single_choice: 0, multiple_choice: 1, text_input: 2 }
 
   validates :content, presence: true

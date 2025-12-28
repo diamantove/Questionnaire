@@ -1,5 +1,6 @@
 class SurveysController < ApplicationController
   before_action :authenticate_user!, except: [ :index, :show ]
+  protect_from_forgery except: :build_form
 
   def index
     @my_surveys = current_user ? current_user.surveys : []
@@ -29,6 +30,7 @@ class SurveysController < ApplicationController
                 current_user.surveys.build
     end
 
+    # Сначала синхронизируем состояние с тем, что пришло из формы
     @survey.assign_attributes(survey_params)
 
     if params[:add_question]
@@ -38,28 +40,24 @@ class SurveysController < ApplicationController
 
     elsif params[:add_option]
       q_idx = params[:add_option].to_i
-
+      # Используем .to_a, чтобы индекс совпадал с порядком в форме
       target_q = @survey.questions.reject(&:marked_for_destruction?)[q_idx]
       target_q.options.build if target_q
-
       render :new, status: :unprocessable_entity
 
     elsif params[:remove_question]
       q_idx = params[:remove_question].to_i
       target_q = @survey.questions.reject(&:marked_for_destruction?)[q_idx]
       target_q.mark_for_destruction if target_q
-
       render :new, status: :unprocessable_entity
 
     elsif params[:remove_option]
       q_idx, o_idx = params[:remove_option].split(":").map(&:to_i)
       target_q = @survey.questions.reject(&:marked_for_destruction?)[q_idx]
-
       if target_q
         target_o = target_q.options.reject(&:marked_for_destruction?)[o_idx]
         target_o.mark_for_destruction if target_o
       end
-
       render :new, status: :unprocessable_entity
 
     else

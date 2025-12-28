@@ -18,11 +18,13 @@ gem "stimulus-rails"
 gem "jbuilder"
 
 # Use Active Model has_secure_password
-gem "bcrypt", "~> 3.1.7"
+gem "bcrypt", "~> 3.1.7" # <--- Убрали решетку в начале!
 
+# === НАШИ НОВЫЕ ГЕМЫ ===
 gem "devise"        # Авторизация (регистрация/вход)
-gem "chartkick"     # Графики
+gem "chartkick"     # Красивые графики
 gem "groupdate"     # Группировка данных для графиков
+# =======================
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]

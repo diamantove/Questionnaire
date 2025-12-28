@@ -5,6 +5,7 @@
       <p class="text-muted"><%= @survey.description %></p>
     </div>
     
+    <%# Кнопки переключения вида %>
     <div class="btn-group shadow-sm" role="group">
       <input type="radio" class="btn-check" name="view_mode" id="view_list" checked>
       <label class="btn btn-outline-primary px-4" for="view_list">
@@ -18,6 +19,7 @@
     </div>
   </div>
 
+  <%# Карточка статистики прохождений %>
   <div class="row mb-5">
     <div class="col-md-4">
       <div class="card border-0 shadow-sm bg-primary text-white h-100">
@@ -44,27 +46,35 @@
       <div class="card-body p-4 pt-0">
         <% if question.requires_options? %>
           <% 
+            # --- НОВЫЙ БЛОК: ФИЛЬТРАЦИЯ ---
+            # 1. Получаем список текстов вариантов, которые реально существуют СЕЙЧАС
             current_option_texts = question.options.pluck(:content)
 
+            # 2. СБОР И ОЧИСТКА ВСЕХ ГАЛОЧЕК ИЗ БАЗЫ
             raw_answers = question.answers.pluck(:content).compact
             all_raw_selections = raw_answers.flat_map do |a| 
               a.gsub(/[\[\]"']/, "").split(",").map(&:strip) 
             end.reject(&:blank?)
 
+            # 3. Оставляем только те ответы, варианты которых НЕ были удалены при редактировании
             valid_selections = all_raw_selections.select { |s| current_option_texts.include?(s) }
             
+            # 4. БАЗА ДЛЯ 100% (сумма только актуальных голосов)
             total_votes_in_question = valid_selections.size
             
+            # 5. ДАННЫЕ ДЛЯ ГРАФИКОВ (на основе отфильтрованных данных)
             chart_data = question.options.map { |opt| 
               [opt.content, valid_selections.count(opt.content)] 
             }.to_h
           %>
 
+          <%# --- ВИД: СПИСОК (PROGRESS BARS) --- %>
           <div class="view-section list-view">
             <div class="mt-3">
               <% question.options.each do |option| %>
                 <% 
                   count = valid_selections.count(option.content)
+                  # Расчет доли варианта относительно актуальных выборов
                   percentage = total_votes_in_question > 0 ? (count.to_f / total_votes_in_question * 100).round(1) : 0
                 %>
                 <div class="mb-3">
@@ -85,6 +95,7 @@
             </div>
           </div>
 
+          <%# --- ВИД: ДИАГРАММЫ --- %>
           <div class="view-section chart-view d-none">
             <div class="row align-items-center py-4">
               <div class="col-md-7">
@@ -114,6 +125,7 @@
           </div>
 
         <% else %>
+          <%# --- ДЛЯ ТЕКСТОВЫХ ВОПРОСОВ --- %>
           <div class="mt-3">
             <label class="small fw-bold text-uppercase text-muted mb-3 d-block">Последние ответы:</label>
             <% if question.answers.any? %>
@@ -162,6 +174,7 @@
         listViews.forEach(el => el.classList.remove('d-none'));
         chartViews.forEach(el => el.classList.add('d-none'));
       }
+      // Фикс для отрисовки графиков Chartkick/Chart.js при смене вкладок
       setTimeout(() => {
         window.dispatchEvent(new Event('resize'));
       }, 50);
