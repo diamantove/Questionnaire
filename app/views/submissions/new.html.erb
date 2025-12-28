@@ -19,6 +19,7 @@
             </div>
             
             <div class="card-body p-4">
+              <%# Находим объект ответа для текущего вопроса %>
               <%= f.fields_for :answers, @submission.answers.to_a[index] do |a_f| %>
                 <%= a_f.hidden_field :question_id, value: question.id %>
 

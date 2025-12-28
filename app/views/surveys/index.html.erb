@@ -1,0 +1,86 @@
+<div class="container py-5">
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-5 gap-3">
+    <div>
+      <h1 class="fw-bold display-5 text-dark mb-2">Опросы</h1>
+      <p class="text-muted mb-0">Управляйте вашими исследованиями и результатами.</p>
+    </div>
+    <%= link_to new_survey_path, class: "btn btn-primary btn-lg rounded-pill px-4 shadow-sm" do %>
+       ＋ Создать опрос
+    <% end %>
+  </div>
+
+  <ul class="nav nav-pills mb-4 bg-light p-1 rounded-pill d-inline-flex border" id="surveyTabs" role="tablist" data-turbo="false">
+    <li class="nav-item">
+      <button class="nav-link active rounded-pill px-4 fw-bold" id="my-tab" data-bs-toggle="pill" data-bs-target="#my-content" type="button" role="tab">
+        Мои опросы (<%= @my_surveys.count %>)
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link rounded-pill px-4 fw-bold" id="all-tab" data-bs-toggle="pill" data-bs-target="#all-content" type="button" role="tab">
+        Доступные мне
+      </button>
+    </li>
+  </ul>
+
+  <div class="tab-content" id="surveyTabsContent">
+    <div class="tab-pane fade show active" id="my-content" role="tabpanel">
+      <div class="row g-4">
+        <% if @my_surveys.any? %>
+          <% @my_surveys.each do |survey| %>
+            <div class="col-md-6 col-lg-4">
+              <div class="card h-100 border-0 shadow-sm hover-card">
+                <div class="card-body p-4">
+                  <h5 class="fw-bold text-dark"><%= survey.title %></h5>
+                  <p class="text-muted small mb-4"><%= truncate(survey.description, length: 80) %></p>
+                  
+                  <div class="d-flex gap-2 mb-3">
+                    <%= link_to edit_survey_path(survey), class: "btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" do %>
+                      <i class="bi bi-pencil"></i> Правка
+                    <% end %>
+                    
+                    <%= button_to survey_path(survey), method: :delete, data: { confirm: 'Удалить?' }, class: "btn btn-sm btn-outline-danger d-flex align-items-center gap-1" do %>
+                      <i class="bi bi-trash"></i> Удалить
+                    <% end %>
+                  </div>
+
+                  <div class="d-flex align-items-center justify-content-between pt-3 border-top">
+                    <span class="small text-muted"><%= survey.submissions.count %> ответов</span>
+                    <%= link_to "Статистика", stats_survey_path(survey), class: "btn btn-primary btn-sm rounded-pill px-3" %>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        <% else %>
+          <div class="col-12 text-center py-5 text-muted">У вас еще нет опросов.</div>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="tab-pane fade" id="all-content" role="tabpanel">
+      <div class="row g-4">
+        <% if @public_surveys.any? %>
+          <% @public_surveys.each do |survey| %>
+            <div class="col-md-6 col-lg-4">
+              <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body p-4">
+                  <span class="badge bg-light text-dark mb-2"><%= survey.user&.email&.split('@')&.first %></span>
+                  <h5 class="fw-bold"><%= survey.title %></h5>
+                  <%= link_to "Пройти опрос", take_survey_path(survey), class: "btn btn-link p-0 text-decoration-none fw-bold stretched-link d-flex align-items-center gap-2" %>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .hover-card { transition: transform 0.2s; }
+  .hover-card:hover { transform: translateY(-5px); }
+  .nav-pills .nav-link.active { background-color: #0d6efd; }
+  form { display: inline; }
+</style>
+
