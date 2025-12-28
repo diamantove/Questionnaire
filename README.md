@@ -1,24 +1,17 @@
-# README
+## Survey App
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+# Краткое описание
 
-Things you may want to cover:
+Простое веб-приложение для создания и прохождения опросов (анкеты). Предоставляет возможность зарегистрироваться, создавать опросы с различными типами вопросов (текстовые, одиночный/множественный выбор), собирать ответы и просматривать статистику.
 
-* Ruby version
+# Функции
 
-* System dependencies
+Регистрация и вход пользователей (Devise)
 
-* Configuration
+Создание опросов с вложенными вопросами и вариантами ответов
 
-* Database creation
+Разные типы вопросов: текст, одиночный выбор, множественный выбор
 
-* Database initialization
+Заполнение опросов и сохранение ответов
 
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
+Просмотр базовой статистики по ответам
