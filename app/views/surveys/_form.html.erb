@@ -1,0 +1,108 @@
+<% if survey.errors.any? %>
+  <div class="alert alert-danger shadow-sm border-0 mb-4">
+    <h6 class="fw-bold">Опрос не может быть сохранен:</h6>
+    <ul class="mb-0 small"><% survey.errors.full_messages.each do |m| %><li><%= m %></li><% end %></ul>
+  </div>
+<% end %>
+
+<% form_url = survey.persisted? ? build_form_survey_path(survey) : build_form_surveys_path %>
+
+<%= form_with(model: survey, url: form_url, method: :post, data: { turbo: false }) do |f| %>
+  
+  <div class="card mb-4 shadow-sm border-0">
+    <div class="card-body p-4">
+      <div class="mb-3">
+        <%= f.label :title, "Название опроса", class: "form-label fw-bold" %>
+        <%= f.text_field :title, class: "form-control", placeholder: "Введите название..." %>
+      </div>
+      <div class="mb-0">
+        <%= f.label :description, "Описание", class: "form-label fw-bold" %>
+        <%= f.text_area :description, class: "form-control", rows: 2, placeholder: "О чем этот опрос?" %>
+      </div>
+    </div>
+  </div>
+
+  <div class="questions-section">
+    <% visible_q_index = 0 %>
+
+    <%= f.fields_for :questions do |q_f| %>
+      <% if q_f.object.marked_for_destruction? %>
+        <%= q_f.hidden_field :id %>
+        <%= q_f.hidden_field :_destroy, value: '1' %>
+      <% else %>
+        <% visible_q_index += 1 %>
+        
+        <div class="card mb-4 border-0 shadow-sm overflow-hidden">
+          <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-2">
+            <span class="fw-bold">#<%= visible_q_index %> Вопрос</span>
+            <button type="submit" name="remove_question" value="<%= q_f.index %>" class="btn btn-sm btn-light text-danger shadow-sm" tabindex="-1">Удалить</button>
+          </div>
+          
+          <div class="card-body p-4">
+            <%= q_f.hidden_field :id %>
+            <div class="row g-3 mb-3">
+              <div class="col-md-8">
+                <%= q_f.label :content, "Текст вопроса", class: "form-label small fw-bold" %>
+                <%= q_f.text_field :content, class: "form-control", placeholder: "Например: Ваш любимый цвет?" %>
+              </div>
+              <div class="col-md-4">
+                <%= q_f.label :question_type, "Тип ответа", class: "form-label small fw-bold" %>
+                <%= q_f.select :question_type, Question.question_types.keys.map { |k| [k.humanize, k] }, {}, 
+                    { class: "form-select type-selector", data: { q_idx: q_f.index } } %>
+              </div>
+            </div>
+
+            <div id="options_container_<%= q_f.index %>" class="<%= 'd-none' unless q_f.object.requires_options? %>">
+              <div class="ms-4 p-3 border-start border-3 bg-light rounded shadow-sm">
+                <label class="small fw-bold mb-2 d-block text-muted">Варианты ответов:</label>
+                
+                <%= q_f.fields_for :options do |o_f| %>
+                  <% if o_f.object.marked_for_destruction? %>
+                    <%= o_f.hidden_field :id %>
+                    <%= o_f.hidden_field :_destroy, value: '1' %>
+                  <% else %>
+                    <div class="mb-2 d-flex gap-2">
+                      <%= o_f.hidden_field :id %>
+                      <%= o_f.text_field :content, class: "form-control form-control-sm", placeholder: "Вариант ответа" %>
+                      <button type="submit" name="remove_option" value="<%= "#{q_f.index}:#{o_f.index}" %>" class="btn btn-sm btn-outline-danger border-0" tabindex="-1">&times;</button>
+                    </div>
+                  <% end %>
+                <% end %>
+                
+                <button type="submit" name="add_option" value="<%= q_f.index %>" class="btn btn-sm btn-link text-primary p-0 mt-2 text-decoration-none fw-bold">+ Добавить вариант</button>
+              </div>
+            </div>
+
+            <div id="text_info_<%= q_f.index %>" class="<%= 'd-none' if q_f.object.requires_options? %>">
+              <div class="ms-4 p-3 border-start border-3 border-info bg-light rounded small text-muted">
+                <i class="bi bi-chat-left-text me-2"></i>Пользователь сможет ввести любой текст.
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+
+  <div class="card border-0 shadow-lg sticky-bottom mb-5">
+    <div class="card-body d-flex justify-content-between bg-white rounded">
+      <button type="submit" name="add_question" value="true" class="btn btn-outline-primary fw-bold">Добавить вопрос</button>
+      <%= f.submit survey.persisted? ? "Обновить опрос" : "Опубликовать", class: "btn btn-success btn-lg px-5 shadow fw-bold" %>
+    </div>
+  </div>
+<% end %>
+
+<script>
+  document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('type-selector')) {
+      const qIdx = e.target.dataset.qIdx;
+      const isText = e.target.value === 'text_input';
+      
+      const optionsCont = document.getElementById(`options_container_${qIdx}`);
+      const textInfo = document.getElementById(`text_info_${qIdx}`);
+      
+      if (optionsCont) optionsCont.classList.toggle('d-none', isText);
+      if (textInfo) textInfo.classList.toggle('d-none', !isText);
+    }
+  });
+</script>
