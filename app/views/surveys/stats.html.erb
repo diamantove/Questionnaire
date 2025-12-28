@@ -1,0 +1,173 @@
+<div class="container py-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="fw-bold mb-0 text-dark"><%= @survey.title %></h1>
+      <p class="text-muted"><%= @survey.description %></p>
+    </div>
+    
+    <div class="btn-group shadow-sm" role="group">
+      <input type="radio" class="btn-check" name="view_mode" id="view_list" checked>
+      <label class="btn btn-outline-primary px-4" for="view_list">
+        <i class="bi bi-list-task"></i> Список
+      </label>
+
+      <input type="radio" class="btn-check" name="view_mode" id="view_charts">
+      <label class="btn btn-outline-primary px-4" for="view_charts">
+        <i class="bi bi-pie-chart-fill"></i> Диаграммы
+      </label>
+    </div>
+  </div>
+
+  <div class="row mb-5">
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm bg-primary text-white h-100">
+        <div class="card-body p-4">
+          <h6 class="text-uppercase opacity-75 small fw-bold">Всего прохождений</h6>
+          <h2 class="display-5 fw-bold mb-0"><%= @submission_count %></h2>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <% @survey.questions.each_with_index do |question, index| %>
+    <div class="card shadow-sm border-0 mb-4 overflow-hidden">
+      <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom-0">
+        <h5 class="mb-0 fw-bold">
+          <span class="text-primary me-2">#<%= index + 1 %></span> 
+          <%= question.content %>
+        </h5>
+        <span class="badge rounded-pill bg-light text-secondary border small">
+          <%= question.question_type.humanize %>
+        </span>
+      </div>
+      
+      <div class="card-body p-4 pt-0">
+        <% if question.requires_options? %>
+          <% 
+            current_option_texts = question.options.pluck(:content)
+
+            raw_answers = question.answers.pluck(:content).compact
+            all_raw_selections = raw_answers.flat_map do |a| 
+              a.gsub(/[\[\]"']/, "").split(",").map(&:strip) 
+            end.reject(&:blank?)
+
+            valid_selections = all_raw_selections.select { |s| current_option_texts.include?(s) }
+            
+            total_votes_in_question = valid_selections.size
+            
+            chart_data = question.options.map { |opt| 
+              [opt.content, valid_selections.count(opt.content)] 
+            }.to_h
+          %>
+
+          <div class="view-section list-view">
+            <div class="mt-3">
+              <% question.options.each do |option| %>
+                <% 
+                  count = valid_selections.count(option.content)
+                  percentage = total_votes_in_question > 0 ? (count.to_f / total_votes_in_question * 100).round(1) : 0
+                %>
+                <div class="mb-3">
+                  <div class="d-flex justify-content-between mb-1">
+                    <span class="text-dark"><%= option.content %></span>
+                    <span class="fw-bold text-primary"><%= count %> (<%= percentage %>%)</span>
+                  </div>
+                  <div class="progress" style="height: 12px; border-radius: 6px; background-color: #f0f2f5;">
+                    <div class="progress-bar bg-primary shadow-sm" role="progressbar" 
+                         style="width: <%= percentage %>%" 
+                         aria-valuenow="<%= percentage %>" aria-valuemin="0" aria-valuemax="100"></div>
+                  </div>
+                </div>
+              <% end %>
+              <div class="text-end mt-2">
+                <small class="text-muted">Актуальных голосов в этом вопросе: <%= total_votes_in_question %></small>
+              </div>
+            </div>
+          </div>
+
+          <div class="view-section chart-view d-none">
+            <div class="row align-items-center py-4">
+              <div class="col-md-7">
+                <%= pie_chart chart_data, 
+                      donut: true, 
+                      legend: "bottom", 
+                      height: "300px",
+                      library: { 
+                        plugins: { 
+                          legend: { labels: { usePointStyle: true, boxWidth: 10, padding: 20 } } 
+                        } 
+                      } %>
+              </div>
+              <div class="col-md-5">
+                <div class="p-4 bg-light rounded-4 border">
+                  <h6 class="fw-bold mb-3 text-dark">Доля в актуальных ответах:</h6>
+                  <% chart_data.each do |label, value| %>
+                    <% p = total_votes_in_question > 0 ? (value.to_f / total_votes_in_question * 100).round(1) : 0 %>
+                    <div class="d-flex justify-content-between mb-2 pb-2 border-bottom border-white">
+                      <span class="text-truncate me-2 small"><%= label %></span>
+                      <span class="badge bg-white text-primary border-0 shadow-sm"><%= p %>%</span>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        <% else %>
+          <div class="mt-3">
+            <label class="small fw-bold text-uppercase text-muted mb-3 d-block">Последние ответы:</label>
+            <% if question.answers.any? %>
+              <div class="row g-3">
+                <% question.answers.last(6).reverse_each do |answer| %>
+                  <div class="col-md-6">
+                    <div class="p-3 bg-light rounded-3 border-start border-primary border-4 h-100 shadow-sm">
+                      <p class="mb-2 text-dark" style="font-style: italic;">"<%= answer.content %>"</p>
+                      <div class="small text-muted d-flex align-items-center">
+                        <i class="bi bi-person me-1"></i> <%= answer.submission.user.email %>
+                      </div>
+                    </div>
+                  </div>
+                <% end %>
+              </div>
+            <% else %>
+              <div class="text-center py-4 text-muted">Ответов пока нет</div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="text-center mt-5">
+    <%= link_to surveys_path, class: 'btn btn-link text-decoration-none text-secondary' do %>
+      <i class="bi bi-arrow-left"></i> Назад к моим опросам
+    <% end %>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('turbo:load', function() {
+    const listBtn = document.getElementById('view_list');
+    const chartBtn = document.getElementById('view_charts');
+    const listViews = document.querySelectorAll('.list-view');
+    const chartViews = document.querySelectorAll('.chart-view');
+
+    if (!listBtn || !chartBtn) return;
+
+    function updateViews(mode) {
+      if (mode === 'chart') {
+        listViews.forEach(el => el.classList.add('d-none'));
+        chartViews.forEach(el => el.classList.remove('d-none'));
+      } else {
+        listViews.forEach(el => el.classList.remove('d-none'));
+        chartViews.forEach(el => el.classList.add('d-none'));
+      }
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 50);
+    }
+
+    listBtn.addEventListener('change', () => updateViews('list'));
+    chartBtn.addEventListener('change', () => updateViews('chart'));
+  });
+</script>
